@@ -1,9 +1,8 @@
 # json-tester
 
-A test suite
+Not all JSON packages support javascript style JSON- JSON is stricter than
+javascript.
 
-a) datatypes (tests)
-b) serialization and deserialization functions
+Furthermore, all packages have different ways of allowing it and strange types.
 
-Each test is a different datatype, call each one and do serialization and
-deserialization
+This is a testing and reference library for json packages.
