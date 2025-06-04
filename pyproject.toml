@@ -48,6 +48,7 @@ ignore = [
 [tool.pytest.ini_options]
 log_cli = true
 
+
 [tool.poe.tasks.test]
 cmd = "pytest --benchmark-columns=stddev,iqr"
 help = "Run."
