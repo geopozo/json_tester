@@ -1,6 +1,5 @@
 # conftest.py
 import re
-from dataclasses import dataclass, field
 
 import pytest
 from tabulate import tabulate
@@ -14,18 +13,12 @@ def _color(outcome: str) -> str:
     }
     return palette.get(outcome, outcome.upper())
 
-@dataclass
-class TestTable:
-    outcomes: dict = field(default_factory=dict)
-    data_types: dict = field(default_factory=dict)
-    libraries: dict = field(default_factory=dict)
-
 @pytest.hookimpl(trylast=True)
 def pytest_terminal_summary(terminalreporter, exitstatus, config): #noqa: ARG001
 
     results = {}
     for t in ("test_encode", "test_decode"):
-        results.setdefault(t, TestTable())
+        results[t] = {}  # datatype -> package -> result
 
     pattern = re.compile(r"\[([^\]]+)\]")  # matches [dataType-library]
 
@@ -33,14 +26,12 @@ def pytest_terminal_summary(terminalreporter, exitstatus, config): #noqa: ARG001
     for outcome in ("passed", "failed", "skipped"):
         for rep in terminalreporter.stats.get(outcome, []):
             nodeid = rep.nodeid
-            # Filter to only include tests named 'test_encode'
 
-            for k in results:
-                if k in nodeid:
-                    result_group = k
+            for test_name in results:
+                if test_name in nodeid:
                     break
             else:
-                continue # condition never met
+                continue
 
             # Extract parameter string: dataType-library
             m = pattern.search(nodeid)
@@ -53,34 +44,31 @@ def pytest_terminal_summary(terminalreporter, exitstatus, config): #noqa: ARG001
             except ValueError:
                 data_type, lib = param_str, ""
 
-            results[result_group].data_types[data_type] = True
-            results[result_group].libraries[lib] = True
+            # Structure: datatype -> package -> result
+            if data_type not in results[test_name]:
+                results[test_name][data_type] = {}
+            results[test_name][data_type][lib] = _color(outcome)
 
-            # Record outcome
-            results[result_group].outcomes.setdefault(outcome, {})
-            results[result_group].outcomes[outcome][(data_type, lib)] = _color(outcome)
+    # Generate tables
+    for test_name, datatypes in results.items():
+        if not datatypes:
+            continue
 
-    tables = {}
-    for tablename, result in results.items():
-        t = tables[tablename] = {
-            "rows": [],
-            "headers": ["Data Type", *list(result.libraries)],
-        }
-        for dt in result.data_types:
-            row = [dt]
-            for lib in result.libraries:
-                cell = None
-                # Check in each outcome dict
-                for outcome in ("passed", "failed", "skipped"):
-                    cell = result.outcomes.get(outcome, {}).get((dt, lib))
-                    if cell:
-                        break
-                row.append(cell or "")
-            t["rows"].append(row)
+        # Get all packages across all datatypes
+        all_packages = set()
+        for packages in datatypes.values():
+            all_packages.update(packages.keys())
 
-    # Headers: first column is 'Data Type', then each library
-    for name, t in tables.items():
-        terminalreporter.write_sep("=", f"{name} Test Results Matrix")
-        terminalreporter.write_line(tabulate(t["rows"], headers=t["headers"], tablefmt="github"))
+        headers = ["Data Type", *sorted(all_packages)]
+        rows = []
+
+        for datatype in sorted(datatypes.keys()):
+            row = [datatype]
+            for package in sorted(all_packages):
+                row.append(datatypes[datatype].get(package, ""))
+            rows.append(row)
+
+        terminalreporter.write_sep("=", f"{test_name} Test Results Matrix")
+        terminalreporter.write_line(tabulate(rows, headers=headers, tablefmt="github"))
 
     terminalreporter.stats.clear()
