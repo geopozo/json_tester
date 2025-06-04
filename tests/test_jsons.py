@@ -5,22 +5,40 @@ import json
 import math
 import pathlib
 import pprint
+import re
 import uuid
 from collections import OrderedDict, defaultdict, namedtuple
 
-import msgspec
 import numpy as np
-import orjson
 import pandas as pd
 import pytest
-import simplejson
-import ujson
 
-# -------------------------------------------------------------------
-# Define a simple namedtuple for testing:
-# -------------------------------------------------------------------
-MyPoint = namedtuple("MyPoint", ["x", "y"]) # noqa: PYI024 namedtuple
-# add in typing.NamedTuple too
+packages = ["json"]
+try:
+    import msgspec
+    packages.append("msgspec")
+except ImportError:
+    pass
+
+try:
+    import orjson
+    packages.append("orjson")
+except ImportError:
+    pass
+
+try:
+    import simplejson
+    packages.append("simplejson")
+except ImportError:
+    pass
+
+try:
+    import ujson
+    packages.append("ujson")
+except ImportError:
+    pass
+
+
 
 # -------------------------------------------------------------------
 # Example “data” dict including a broad range of types:
@@ -87,9 +105,9 @@ data = {
 
     "bytearray": bytearray(b"hello world"),
 
-    # "complex": complex(1, 2),
+    "complex": complex(1, 2),
 
-    # "range": range(5),
+    "range": range(5),
 
     "memoryview": memoryview(b"memory"),
 
@@ -97,11 +115,11 @@ data = {
 
     "defaultDict": defaultdict(lambda: "missing", {"x": 100, "y": 200}),
 
-    "namedtuple": MyPoint(1, 2),
+    "namedtuple": namedtuple("MyPoint", ["x", "y"])(1, 2), # noqa: PYI024 namedtuple
 
-    # "regexPattern": re.compile(r"^\d{3}-\d{2}-\d{4}$"),
+    "regexPattern": re.compile(r"^\d{3}-\d{2}-\d{4}$"),
 
-    # "ellipsis": ...,
+    "ellipsis": ...,
 }
 
 def assert_almost_equal_with_nan(a, b, fail=None): # noqa: C901
@@ -150,35 +168,37 @@ decoders = {
 
 
 @pytest.mark.parametrize(
-    ("package", "encode_fn"),
-    encoders.items(),
-    ids=encoders.keys(),
+    "package",
+    packages,
+    ids=packages,
 )
 @pytest.mark.parametrize(
     ("data_type", "data"),
     data.items(),
     ids=data.keys(),
 )
-def test_encode(benchmark, package, encode_fn, data_type, data):
+def test_encode(benchmark, package, data_type, data):
     """Test encoding."""
-    _ = package # standard include
     benchmark.group=f"encoding_{data_type}"
-    benchmark(encode_fn, data)
+    benchmark(encoders[package], data)
 
 @pytest.mark.parametrize(
-    ("package", "decode_fn"),
-    decoders.items(),
-    ids=decoders.keys(),
+    "package",
+    packages,
+    ids=packages,
 )
 @pytest.mark.parametrize(
     ("data_type", "data"),
     data.items(),
     ids=data.keys(),
 )
-def test_decode(benchmark, package, decode_fn, data_type, data):
+def test_decode(benchmark, package, data_type, data):
     """Test decoding and equalness."""
     benchmark.group=f"decoding_{data_type}"
-    encoded = encoders[package](data)
-    benchmark(decode_fn, encoded)
+    try:
+        encoded = encoders[package](data)
+    except: # noqa: E722
+        pytest.skip("Can't encode")
+    benchmark(decoders[package], encoded)
 
 # assert_almost_equal_with_nan(data,
