@@ -16,9 +16,11 @@ def _color(outcome: str) -> str:
 @pytest.hookimpl(trylast=True)
 def pytest_terminal_summary(terminalreporter, exitstatus, config): #noqa: ARG001
 
-    results = {}
-    for t in ("test_encode", "test_decode"):
-        results[t] = {}  # datatype -> package -> result
+    test_names = ("test_encode", "test_decode", "test_roundtrip")
+    datatypes = {} # columns but also data
+    lib_names: dict[str, bool] = {} # dict of all lib names
+    for t in test_names:
+        datatypes[t] = {}  # datatype -> package -> result
 
     pattern = re.compile(r"\[([^\]]+)\]")  # matches [dataType-library]
 
@@ -27,7 +29,7 @@ def pytest_terminal_summary(terminalreporter, exitstatus, config): #noqa: ARG001
         for rep in terminalreporter.stats.get(outcome, []):
             nodeid = rep.nodeid
 
-            for test_name in results:
+            for test_name in test_names:
                 if test_name in nodeid:
                     break
             else:
@@ -40,35 +42,32 @@ def pytest_terminal_summary(terminalreporter, exitstatus, config): #noqa: ARG001
 
             param_str = m.group(1)
             try:
-                data_type, lib = param_str.split("-", 1)
+                data_type, lib_name = param_str.split("-", 1)
             except ValueError:
-                data_type, lib = param_str, ""
-
+                data_type, lib_name = param_str, ""
+            lib_names[lib_name] = True
             # Structure: datatype -> package -> result
-            if data_type not in results[test_name]:
-                results[test_name][data_type] = {}
-            results[test_name][data_type][lib] = _color(outcome)
+            datatypes.setdefault(data_type, {}).setdefault(lib_name, {})
+
+            datatypes[data_type][lib_name][test_name] = _color(outcome)
+
+    headers = ["Data Type", *sorted(lib_names)]
+    rows = []
 
     # Generate tables
-    for test_name, datatypes in results.items():
-        if not datatypes:
+    for typename, result in datatypes.items():
+        if not result:
             continue
 
-        # Get all packages across all datatypes
-        all_packages = set()
-        for packages in datatypes.values():
-            all_packages.update(packages.keys())
+        row = [typename]
+        for tests in result.values():
+            row.append( # could be comp
+                f"{tests["test_encode"]}/{tests["test_decode"]}"
+            ) # no test_roundtrip yet
+        rows.append(row)
 
-        headers = ["Data Type", *sorted(all_packages)]
-        rows = []
-
-        for datatype in sorted(datatypes.keys()):
-            row = [datatype]
-            for package in sorted(all_packages):
-                row.append(datatypes[datatype].get(package, ""))
-            rows.append(row)
-
-        terminalreporter.write_sep("=", f"{test_name} Test Results Matrix")
-        terminalreporter.write_line(tabulate(rows, headers=headers, tablefmt="github"))
+    terminalreporter.write_line("ENCODE/DECODE/ROUNDTRIP")
+    terminalreporter.write_sep("=", "JSON Test Matrix")
+    terminalreporter.write_line(tabulate(rows, headers=headers, tablefmt="github"))
 
     terminalreporter.stats.clear()
