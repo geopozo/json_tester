@@ -34,7 +34,7 @@ def pytest_terminal_summary(terminalreporter, exitstatus, config): #noqa: ARG001
     datatypes = {} # columns but also data
     lib_names: dict[str, bool] = {} # dict of all lib names
     for t in test_names:
-        datatypes[t] = {}  # datatype -> package -> result
+        datatypes.setdefault(t, {})
 
     pattern = re.compile(r"\[([^\]]+)\]")  # matches [dataType-library]
 
@@ -74,19 +74,21 @@ def pytest_terminal_summary(terminalreporter, exitstatus, config): #noqa: ARG001
                 benchmark_stats = bench
             )
 
-    headers = ["Data Type", *sorted(lib_names)]
+    headers = ["Data Type", *list(lib_names)]
     rows = []
 
     # Generate tables
-    for typename, result in datatypes.items():
-        if not result:
+    for kind, libs in datatypes.items():
+        if not libs:
             continue
 
-        row = [typename]
-        for tests in result.values():
-            row.append( # could be comp
-                f"{tests["test_encode"]}/{tests["test_decode"]}"
-            ) # no test_roundtrip yet
+        row = [kind]
+        row.extend(
+            [
+                f"{libs[lib]['test_encode']}/{libs[lib]['test_decode']}"
+                for lib in headers[1:]
+            ]
+        )
         rows.append(row)
 
     terminalreporter.write_line("ENCODE/DECODE/ROUNDTRIP")
