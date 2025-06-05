@@ -4,6 +4,7 @@ import re
 import pytest
 from tabulate import tabulate
 
+
 def _scale(v):
     if v >= 1.0:
         return f"{v:05.1} s"

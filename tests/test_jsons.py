@@ -1,35 +1,9 @@
-import json
 import math
 import pprint
 
 import pytest
-
 from data import CodecPair, data
-
-packages = ["json"]
-try:
-    import msgspec
-    packages.append("msgspec")
-except ImportError:
-    pass
-
-try:
-    import orjson
-    packages.append("orjson")
-except ImportError:
-    pass
-
-try:
-    import simplejson
-    packages.append("simplejson")
-except ImportError:
-    pass
-
-try:
-    import ujson
-    packages.append("ujson")
-except ImportError:
-    pass
+from serdes import decoders, encoders, packages
 
 
 def assert_almost_equal_with_nan(a, b, fail=None): # noqa: C901
@@ -58,24 +32,6 @@ def assert_almost_equal_with_nan(a, b, fail=None): # noqa: C901
             assert_almost_equal_with_nan(a[k], b[k], fail=fail)
     elif a != b:
         fail()
-
-encoders = {
-    "json": lambda data: json.dumps(data),
-    "ujson": lambda data: ujson.dumps(data),
-    "orjson": lambda data: orjson.dumps(data).decode("utf-8"),
-    "simplejson": lambda data: simplejson.dumps(data, allow_nan=True),
-    "msgspec": lambda data: msgspec.json.encode(data).decode("utf-8"),
-}
-
-decoders = {
-    "json": lambda data: json.loads(data),
-    "ujson": lambda data: ujson.loads(data),
-    "orjson": lambda data: orjson.loads(data.encode("utf-8")),
-    "simplejson": lambda data: simplejson.loads(data, allow_nan=True),
-    "msgspec": lambda data: msgspec.json.decode(data, strict=False),
-}
-
-
 
 @pytest.mark.parametrize(
     "package",
@@ -138,6 +94,7 @@ def test_roundtrip(record_property, package, _data_type, data):
         return
     try:
         assert_almost_equal_with_nan(decoded, expected)
-    except: # noqa: E722
+    except:
         record_property("decoded", decoded)
         record_property("expected", expected)
+        raise

@@ -39,7 +39,10 @@ data = {
 
     "dict": {"key1": "value1", "key2": 42},
 
-    "datetime": datetime.datetime(2025, 1, 1, 12, 0, 0, tzinfo=datetime.UTC),
+    "datetime": _cast(
+        datetime.datetime(2025, 1, 1, 12, 0, 0, tzinfo=datetime.UTC),
+        str
+    ),
 
     "date": datetime.date(2025, 1, 1),
 
