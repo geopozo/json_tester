@@ -63,16 +63,19 @@ def pytest_terminal_summary(terminalreporter, exitstatus, config): #noqa: ARG001
 
             datatypes.setdefault(data_type, {}).setdefault(lib_name, {})
 
-            bench = None
-            for b in config._benchmarksession.benchmarks:
-                if nodeid.endswith(b.name):
-                    bench = b.stats
+            if test_name != "test_roundtrip":
+                bench = None
+                for b in config._benchmarksession.benchmarks:
+                    if nodeid.endswith(b.name):
+                        bench = b.stats
 
-            # All need to be equal.
-            datatypes[data_type][lib_name][test_name] = _format_result(
-                outcome,
-                benchmark_stats = bench
-            )
+                # All need to be equal.
+                datatypes[data_type][lib_name][test_name] = _format_result(
+                    outcome,
+                    benchmark_stats = bench
+                )
+            else:
+                datatypes[data_type][lib_name][test_name] = rep.user_properties
 
     headers = ["Data Type", *list(lib_names)]
     rows = []
@@ -86,6 +89,11 @@ def pytest_terminal_summary(terminalreporter, exitstatus, config): #noqa: ARG001
         row.extend(
             [
                 f"{libs[lib]['test_encode']}/{libs[lib]['test_decode']}"
+                + (
+                    f"\nxpected: {i['expected']!r}\ndecoded: {i['decoded']!r}\n"
+                    if (i := dict(libs[lib]["test_roundtrip"]))
+                    else ""
+                )
                 for lib in headers[1:]
             ]
         )
@@ -93,6 +101,8 @@ def pytest_terminal_summary(terminalreporter, exitstatus, config): #noqa: ARG001
 
     terminalreporter.write_line("ENCODE/DECODE/ROUNDTRIP")
     terminalreporter.write_sep("=", "JSON Test Matrix")
-    terminalreporter.write_line(tabulate(rows, headers=headers, tablefmt="github"))
+    terminalreporter.write_line(
+        tabulate(rows, headers=headers, tablefmt="fancy_grid")
+    )
 
     terminalreporter.stats.clear()

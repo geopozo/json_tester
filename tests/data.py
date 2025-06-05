@@ -5,9 +5,20 @@ import pathlib
 import re
 import uuid
 from collections import OrderedDict, defaultdict, namedtuple
+from typing import Any, NamedTuple
 
 import numpy as np
 import pandas as pd
+
+
+class CodecPair(NamedTuple):
+    """If encoding/deocidng is different."""
+    input: Any
+    output: Any
+
+def _cast(data, fn):
+    """Generate pair from data + function."""
+    return CodecPair(data, fn(data))
 
 # -------------------------------------------------------------------
 # Example "data" dict including a broad range of types:
@@ -17,7 +28,7 @@ data = {
 
     "list_invalid_floats": [float("-inf"), float("inf"), float("NaN")],
 
-    "ndarray": np.array([1, 2, 3, 4]),
+    "ndarray": _cast(np.array([1, 2, 3, 4]), lambda d: d.tolist()),
 
     "pdSeries": pd.Series([10, 20, 30]),
 
@@ -56,7 +67,7 @@ data = {
 
     "fraction": fractions.Fraction(3, 7),
 
-    "uuid": uuid.UUID("12345678123456781234567812345678"),
+    "uuid": _cast(uuid.UUID("12345678123456781234567812345678"), str),
 
     "pathlibPath": pathlib.Path("/path/example.txt"),
 
@@ -90,3 +101,4 @@ data = {
 
     "ellipsis": ...,
 }
+
