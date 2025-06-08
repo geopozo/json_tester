@@ -10,6 +10,7 @@ from typing import Any, NamedTuple
 import numpy as np
 import pandas as pd
 
+import data_generators as dg
 
 class CodecPair(NamedTuple):
     """If encoding/deocidng is different."""
@@ -28,11 +29,14 @@ data = {
 
     "list_invalid_floats": [float("-inf"), float("inf"), float("NaN")],
 
-    "ndarray": _cast(np.array([1, 2, 3, 4]), lambda d: d.tolist()),
+    "nd_ndarray": _cast(np.array([1, 2, 3, 4]), lambda d: d.tolist()),
 
-    "pdSeries": pd.Series([10, 20, 30]),
+    "pd_Series": pd.Series([10, 20, 30]),
 
-    "pdDataframe": pd.DataFrame({
+    "pd_Series_uint16": pd.Series([1, 2, 3], dtype="uint16"),
+    "pd_Series_float64": pd.Series([1.5, 2.5, 3.5], dtype="float64"),
+
+    "pd_Dataframe": pd.DataFrame({
         "col1": [1, 2, 3],
         "col2": ["a", "b", "c"]
     }),
@@ -50,31 +54,35 @@ data = {
 
     "timedelta": datetime.timedelta(days=2, hours=3, minutes=15),
 
-    "pdTimestamp": pd.Timestamp("2025-01-01 12:00:00"),
+    "pd_Timestamp": pd.Timestamp("2025-01-01 12:00:00"),
 
-    "pdTimedelta": pd.Timedelta(days=5, minutes=45),
+    "pd_Timedelta": pd.Timedelta(days=5, minutes=45),
 
-    "pdPeriod": pd.Period("2025-03", freq="M"),
+    "pd_Period": pd.Period("2025-03", freq="M"),
 
-    "pdInterval": pd.Interval(0, 10, closed="both"),
+    "pd_Interval": pd.Interval(0, 10, closed="both"),
 
-    "npint32": np.int32(42),
+    "pd_Categorical": pd.Categorical(["apple", "banana", "apple"]),
 
-    "npfloat64": np.float64(3.14159),
+    # NumPy numeric types
+    "np_uint16": np.uint16(65535),
+    "np_int16": np.int16(-32768),
+    "np_uint8": np.uint8(255),
+    "np_int32": np.int32(-123456),
+    "np_float32": np.float32(3.14),
+    "np_float64": np.float64(2.71828),
 
-    "npdatetime64": np.datetime64("2025-01-01T12:00:00"),
+    "np_datetime64": np.datetime64("2025-01-01T12:00:00"),
 
-    "nptimedelta64": np.timedelta64(3, "D"),
+    "np_timedelta64": np.timedelta64(3, "D"),
 
-    "decimalDecimal": decimal.Decimal("12.34"),
+    "decimal_Decimal": decimal.Decimal("12.34"),
 
     "fraction": fractions.Fraction(3, 7),
 
     "uuid": _cast(uuid.UUID("12345678123456781234567812345678"), str),
 
-    "pathlibPath": pathlib.Path("/path/example.txt"),
-
-    "pdCategorical": pd.Categorical(["apple", "banana", "apple"]),
+    "pathlib_Path": pathlib.Path("/path/example.txt"),
 
     "bool": True,
 
@@ -103,5 +111,19 @@ data = {
     "regexPattern": re.compile(r"^\d{3}-\d{2}-\d{4}$"),
 
     "ellipsis": ...,
-}
 
+
+    "pilImage_I16": dg.gen_pil_data(),
+
+    "struct_uint16": dg.gen_struct_data(),
+
+    "h5py_uint16_array": dg.gen_h5py_data(),
+
+    "astropy_fits_uint16_array": dg.gen_astropy_data(),
+
+    "dask_uint16_array": dg.gen_dask_data(),
+
+    "polars_uint16_dataframe": dg.gen_polars_data(),
+
+    "xarray_uint16_dataarray": dg.gen_xarray_data()
+}
