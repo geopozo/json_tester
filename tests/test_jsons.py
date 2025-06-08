@@ -1,10 +1,18 @@
 import math
+import numbers
 import pprint
 
 import pytest
+from collections.abc import Iterable, Sized
 from data import CodecPair, data
 from serdes import decoders, encoders, packages, parser_errors
 
+def _is_listish(x):
+    return (
+        isinstance(x, Iterable)
+        and isinstance(x, Sized)
+        and not isinstance(x, (str, bytes, numbers.Number))
+    )
 
 def assert_almost_equal_with_nan(a, b, fail=None): # noqa: C901
     """Assert but allow NaN to be equal to NaN."""
@@ -20,7 +28,7 @@ def assert_almost_equal_with_nan(a, b, fail=None): # noqa: C901
         if math.isclose(a, b, rel_tol=1e-9, abs_tol=0.0):
             return
         fail()
-    elif isinstance(a, (list, tuple)) and isinstance(b, (list, tuple)):
+    elif _is_listish(a) and _is_listish(b):
         if len(a) != len(b):
             fail()
         for (x, y) in zip(a, b, strict=True):
