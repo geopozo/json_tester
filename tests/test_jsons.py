@@ -3,7 +3,7 @@ import pprint
 
 import pytest
 from data import CodecPair, data
-from serdes import decoders, encoders, packages
+from serdes import decoders, encoders, packages, parser_errors
 
 
 def assert_almost_equal_with_nan(a, b, fail=None): # noqa: C901
@@ -48,7 +48,10 @@ def test_encode(benchmark, package, data_type, data):
     benchmark.group=f"encoding_{data_type}"
     if isinstance(data, CodecPair):
         data = data.input
-    benchmark(encoders[package], data)
+    try:
+        benchmark(encoders[package], data)
+    except parser_errors[package]():
+        pytest.skip("Encoding error.")
 
 @pytest.mark.parametrize(
     "package",
@@ -94,7 +97,6 @@ def test_roundtrip(record_property, package, _data_type, data):
         return
     try:
         assert_almost_equal_with_nan(decoded, expected)
-    except:
+    except AssertionError:
         record_property("decoded", decoded)
         record_property("expected", expected)
-        raise

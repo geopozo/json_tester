@@ -26,7 +26,7 @@ except ImportError:
     pass
 
 try:
-    from custom import custom_dumps, custom_loads
+    from custom import custom_dumps, custom_loads, CustomError
     packages.append("custom")
 except ImportError:
     pass
@@ -38,6 +38,15 @@ encoders = {
     "simplejson": lambda data: simplejson.dumps(data, allow_nan=True),
     "msgspec": lambda data: msgspec.json.encode(data).decode("utf-8"),
     "custom": lambda data: custom_dumps(data),
+}
+
+parser_errors = {
+    "json": lambda : TypeError,
+    "ujson": lambda: TypeError,
+    "orjson": lambda : orjson.JSONEncodeError,
+    "simplejson": lambda : TypeError,
+    "msgspec": lambda : TypeError,
+    "custom": lambda : TypeError,
 }
 
 decoders = {
