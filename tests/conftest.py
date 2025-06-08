@@ -4,6 +4,8 @@ import re
 import pytest
 from tabulate import tabulate
 
+from data import data
+
 
 def _scale(v):
     if v >= 1.0:
@@ -82,7 +84,8 @@ def pytest_terminal_summary(terminalreporter, exitstatus, config): #noqa: ARG001
     rows = []
 
     # Generate tables
-    for kind, libs in datatypes.items():
+    for kind in data:
+        libs = datatypes.get(kind)
         if not libs:
             continue
 

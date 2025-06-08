@@ -29,18 +29,6 @@ data = {
 
     "list_invalid_floats": [float("-inf"), float("inf"), float("NaN")],
 
-    "nd_ndarray": _cast(np.array([1, 2, 3, 4]), lambda d: d.tolist()),
-
-    "pd_Series": pd.Series([10, 20, 30]),
-
-    "pd_Series_uint16": pd.Series([1, 2, 3], dtype="uint16"),
-    "pd_Series_float64": pd.Series([1.5, 2.5, 3.5], dtype="float64"),
-
-    "pd_Dataframe": pd.DataFrame({
-        "col1": [1, 2, 3],
-        "col2": ["a", "b", "c"]
-    }),
-
     "dict": {"key1": "value1", "key2": 42},
 
     "datetime": _cast(
@@ -54,6 +42,17 @@ data = {
 
     "timedelta": datetime.timedelta(days=2, hours=3, minutes=15),
 
+    "pd_Series": pd.Series([10, 20, 30]),
+
+    "pd_Series_uint16": pd.Series([1, 2, 3], dtype="uint16"),
+
+    "pd_Series_float64": pd.Series([1.5, 2.5, 3.5], dtype="float64"),
+
+    "pd_Dataframe": pd.DataFrame({
+        "col1": [1, 2, 3],
+        "col2": ["a", "b", "c"]
+    }),
+
     "pd_Timestamp": pd.Timestamp("2025-01-01 12:00:00"),
 
     "pd_Timedelta": pd.Timedelta(days=5, minutes=45),
@@ -64,10 +63,13 @@ data = {
 
     "pd_Categorical": pd.Categorical(["apple", "banana", "apple"]),
 
+
     # NumPy numeric types
+    "nd_ndarray": _cast(np.array([1, 2, 3, 4]), lambda d: d.tolist()),
+
+    "np_uint8": np.uint8(255),
     "np_uint16": np.uint16(65535),
     "np_int16": np.int16(-32768),
-    "np_uint8": np.uint8(255),
     "np_int32": np.int32(-123456),
     "np_float32": np.float32(3.14),
     "np_float64": np.float64(2.71828),
